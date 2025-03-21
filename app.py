@@ -127,7 +127,7 @@ def load_large_vocabulary():
         "pliers", "shears", "shorts", "information", "knowledge", "furniture", "luggage",
         "equipment", "traffic", "advice", "progress", "research", "evidence", "music",
         "homework", "money", "cash", "happiness", "anger", "love", "courage", "honesty",
-        "water", "air", "oil", "electricity", "software", "hardware", "data", "media"
+        "water", "air", "oil", "electricity", "software", "hardware", "data", "media","chemistry"
     }
     
     more_words = []

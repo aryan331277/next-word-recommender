@@ -9,7 +9,7 @@ st.title("Fast Word Suggester")
 @st.cache_data
 def load_large_vocabulary():
     """Load a large vocabulary of English and programming terms"""
-words = [
+    words = [
     # Common English words
     "the", "be", "to", "of", "and", "a", "in", "that", "have", "it", "for", "not", "on", "with", 
     "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", 

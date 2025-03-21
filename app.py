@@ -3,7 +3,7 @@ import re
 
 # Setup
 st.set_page_config(page_title="Word Suggester", page_icon="⌨️")
-st.title("Fast Word Suggester")
+st.title("Word Suggester")
 
 @st.cache_data
 def load_large_vocabulary():

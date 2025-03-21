@@ -40,23 +40,6 @@ def load_large_vocabulary():
     "algorithm", "algorithmic", "algorithmically",
     "data", "database", "datatype", "dataset", "datapoint", "datamine",
 
-    # Streamlit specific
-    "streamlit", "st", "sidebar", "button", "text", "input", "slider", "checkbox", "radio",
-    "selectbox", "multiselect", "number", "text_input", "text_area", "date_input", "time_input",
-    "file_uploader", "color_picker", "progress", "spinner", "balloons", "error", "warning", "info",
-    "success", "exception", "markdown", "latex", "code", "echo", "container", "columns", "expander",
-    "beta_columns", "beta_container", "beta_expander", "header", "subheader", "title", "write",
-
-    # Additional programming concepts
-    "machine", "learning", "artificial", "intelligence", "neural", "network", "deep", "learning",
-    "tensorflow", "pytorch", "keras", "scikit", "numpy", "pandas", "matplotlib", "seaborn", "plotly",
-    "visualization", "analysis", "analytics", "statistic", "statistical", "regression", "classification",
-    "clustering", "dimensionality", "reduction", "feature", "extraction", "selection", "engineering",
-    "preprocessing", "postprocessing", "training", "validation", "testing", "inference", "prediction",
-    "accuracy", "precision", "recall", "f1", "score", "loss", "function", "gradient", "descent",
-    "backpropagation", "optimization", "optimizer", "momentum", "learning", "rate", "epoch", "batch",
-    "normalization", "regularization", "dropout", "activation", "function", "sigmoid", "tanh", "relu",
-
     # Business & Entrepreneurship
     "entrepreneur", "startup", "founder", "business", "enterprise", "venture", "funding", "investment",
     "capital", "revenue", "profit", "loss", "scalability", "market", "branding", "advertising",
@@ -89,13 +72,37 @@ def load_large_vocabulary():
     "vaccination", "microbiome", "pathology", "cardiology", "neurology", "oncology",
 ]
     
+    # Create proper word forms following English spelling rules
     more_words = []
     for word in words:
         if len(word) > 4:
-            more_words.append(word + "s")  # Plural
-            more_words.append(word + "ing")  # Gerund
-            if word[-1] not in ['e', 'y']:
-                more_words.append(word + "ed")  # Past tense
+            # Handle plurals properly
+            if word.endswith('ch') or word.endswith('sh') or word.endswith('s') or word.endswith('x') or word.endswith('z'):
+                more_words.append(word + "es")  # catches, dishes, buses, boxes, buzzes
+            elif word.endswith('y') and word[-2] not in 'aeiou':
+                more_words.append(word[:-1] + "ies")  # fly -> flies, but toy -> toys
+            else:
+                more_words.append(word + "s")
+            
+            # Handle gerund (-ing) form properly
+            if word.endswith('e') and not word.endswith('ee'):
+                more_words.append(word[:-1] + "ing")  # create -> creating
+            else:
+                more_words.append(word + "ing")
+            
+            # Handle past tense (-ed) properly
+            if word.endswith('e'):
+                more_words.append(word + "d")  # create -> created
+            elif word.endswith('y') and word[-2] not in 'aeiou':
+                more_words.append(word[:-1] + "ied")  # try -> tried
+            elif (len(word) > 2 and 
+                  word[-1] not in 'wy' and 
+                  word[-1] in 'bcdfghjklmnpqrstvxz' and 
+                  word[-2] in 'aeiou' and 
+                  word[-3] not in 'aeiou'):
+                more_words.append(word + word[-1] + "ed")  # stop -> stopped
+            else:
+                more_words.append(word + "ed")
     
     words.extend(more_words)
     return list(set(words))  
@@ -145,5 +152,3 @@ if suggestions:
                 </script>
                 """
                 st.components.v1.html(js, height=0)
-
-  

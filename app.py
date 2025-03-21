@@ -5,7 +5,6 @@ import re
 st.set_page_config(page_title="Fast Word Suggester", page_icon="⌨️")
 st.title("Fast Word Suggester")
 
-# Load large English vocabulary with common programming terms
 @st.cache_data
 def load_large_vocabulary():
     """Load a large vocabulary of English and programming terms"""
@@ -90,7 +89,6 @@ def load_large_vocabulary():
     "vaccination", "microbiome", "pathology", "cardiology", "neurology", "oncology",
 ]
     
-    # Add more word variations
     more_words = []
     for word in words:
         if len(word) > 4:
@@ -100,9 +98,8 @@ def load_large_vocabulary():
                 more_words.append(word + "ed")  # Past tense
     
     words.extend(more_words)
-    return list(set(words))  # Remove duplicates
+    return list(set(words))  
 
-# Find matching words
 def find_matching_words(partial_word, word_list, max_suggestions=5):
     """Find words that start with the given partial word"""
     if not partial_word or len(partial_word) < 2:
@@ -111,39 +108,30 @@ def find_matching_words(partial_word, word_list, max_suggestions=5):
     partial_word = partial_word.lower()
     matching = [word for word in word_list if word.lower().startswith(partial_word)]
     
-    # Sort by length (shorter words first) for better user experience
     matching.sort(key=len)
     
     return matching[:max_suggestions]
 
-# Initialize vocabulary
 vocabulary = load_large_vocabulary()
 
-# Main text input
 st.text_area("Type here:", height=150, key="user_input")
 
-# Get current input and update suggestions
 user_input = st.session_state.get("user_input", "")
 
-# Split text to get the last word being typed
 words = re.findall(r'\b\w+\b|\S', user_input)
 current_word = words[-1] if words else ""
 
-# Get suggestions
 suggestions = find_matching_words(current_word, vocabulary)
 
-# Display suggestions
 if suggestions:
     st.subheader("Suggestions:")
     cols = st.columns(min(len(suggestions), 5))
     
     for i, suggestion in enumerate(suggestions):
         if cols[i].button(suggestion, key=f"sugg_{i}"):
-            # Create a new text with the suggestion
             if words:
                 new_words = words[:-1] + [suggestion]
-                new_text = " ".join(new_words) + " "  # Add space at the end
-                # Use JavaScript to update the text area
+                new_text = " ".join(new_words) + " "  
                 js = f"""
                 <script>
                     var textareas = window.parent.document.querySelectorAll('textarea');

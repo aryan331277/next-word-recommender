@@ -73,39 +73,130 @@ def load_large_vocabulary():
 ]
     
     # Create proper word forms following English spelling rules
+    # Define irregular words and words that don't need certain forms
+    irregular_plurals = {
+        "man": "men", "woman": "women", "child": "children", "foot": "feet", "tooth": "teeth",
+        "goose": "geese", "mouse": "mice", "ox": "oxen", "person": "people", "leaf": "leaves",
+        "life": "lives", "wife": "wives", "wolf": "wolves", "elf": "elves", "loaf": "loaves",
+        "potato": "potatoes", "tomato": "tomatoes", "echo": "echoes", "hero": "heroes", 
+        "torpedo": "torpedoes", "veto": "vetoes", "criterion": "criteria", "datum": "data",
+        "analysis": "analyses", "crisis": "crises", "thesis": "theses", "phenomenon": "phenomena", 
+        "index": "indices", "matrix": "matrices", "vertex": "vertices", "medium": "media",
+        "formula": "formulae", "cactus": "cacti", "focus": "foci", "nucleus": "nuclei",
+        "syllabus": "syllabi", "fungus": "fungi", "radius": "radii"
+    }
+    
+    # Words that don't follow standard rules for past tense
+    irregular_verbs = {
+        "be": ["am", "is", "are", "was", "were", "been", "being"],
+        "have": ["has", "had", "having"],
+        "do": ["does", "did", "done", "doing"],
+        "say": ["says", "said", "saying"],
+        "make": ["makes", "made", "making"],
+        "go": ["goes", "went", "gone", "going"],
+        "take": ["takes", "took", "taken", "taking"],
+        "come": ["comes", "came", "coming"],
+        "see": ["sees", "saw", "seen", "seeing"],
+        "know": ["knows", "knew", "known", "knowing"],
+        "get": ["gets", "got", "gotten", "getting"],
+        "give": ["gives", "gave", "given", "giving"],
+        "find": ["finds", "found", "finding"],
+        "think": ["thinks", "thought", "thinking"],
+        "tell": ["tells", "told", "telling"],
+        "run": ["runs", "ran", "running"],
+        "bring": ["brings", "brought", "bringing"],
+        "buy": ["buys", "bought", "buying"],
+        "catch": ["catches", "caught", "catching"],
+        "teach": ["teaches", "taught", "teaching"],
+        "eat": ["eats", "ate", "eaten", "eating"],
+        "put": ["puts", "putting"],
+        "read": ["reads", "reading"],  # Same spelling for present and past
+        "begin": ["begins", "began", "begun", "beginning"],
+        "write": ["writes", "wrote", "written", "writing"],
+        "sing": ["sings", "sang", "sung", "singing"],
+        "speak": ["speaks", "spoke", "spoken", "speaking"],
+        "swim": ["swims", "swam", "swum", "swimming"],
+        "stand": ["stands", "stood", "standing"]
+    }
+    
+    # Words that are already plural or don't have a typical plural form
+    non_plurals = {
+        "physics", "mathematics", "economics", "news", "politics", "statistics", "ethics",
+        "series", "species", "deer", "sheep", "fish", "means", "offspring", "scissors", 
+        "pants", "trousers", "glasses", "binoculars", "clothes", "thanks", "jeans", 
+        "pliers", "shears", "shorts", "information", "knowledge", "furniture", "luggage",
+        "equipment", "traffic", "advice", "progress", "research", "evidence", "music",
+        "homework", "money", "cash", "happiness", "anger", "love", "courage", "honesty",
+        "water", "air", "oil", "electricity", "software", "hardware", "data", "media"
+    }
+    
     more_words = []
     for word in words:
-        if len(word) > 4:
-            # Handle plurals properly
-            if word.endswith('ch') or word.endswith('sh') or word.endswith('s') or word.endswith('x') or word.endswith('z'):
-                more_words.append(word + "es")  # catches, dishes, buses, boxes, buzzes
+        if len(word) > 3:  # Only process words of reasonable length
+            # Handle plurals
+            if word.lower() in non_plurals:
+                # Don't add plural forms for these words
+                pass
+            elif word.lower() in irregular_plurals:
+                more_words.append(irregular_plurals[word.lower()])
+            elif word.endswith(('ch', 'sh', 's', 'x', 'z', 'o')):
+                more_words.append(word + "es")
             elif word.endswith('y') and word[-2] not in 'aeiou':
-                more_words.append(word[:-1] + "ies")  # fly -> flies, but toy -> toys
+                more_words.append(word[:-1] + "ies")
+            elif word.endswith('f'):
+                more_words.append(word[:-1] + "ves")
+            elif word.endswith('fe'):
+                more_words.append(word[:-2] + "ves")
             else:
                 more_words.append(word + "s")
             
-            # Handle gerund (-ing) form properly
-            if word.endswith('e') and not word.endswith('ee'):
-                more_words.append(word[:-1] + "ing")  # create -> creating
+            # Handle verb forms (ing, ed, etc.)
+            if word.lower() in irregular_verbs:
+                more_words.extend(irregular_verbs[word.lower()])
             else:
-                more_words.append(word + "ing")
-            
-            # Handle past tense (-ed) properly
-            if word.endswith('e'):
-                more_words.append(word + "d")  # create -> created
-            elif word.endswith('y') and word[-2] not in 'aeiou':
-                more_words.append(word[:-1] + "ied")  # try -> tried
-            elif (len(word) > 2 and 
-                  word[-1] not in 'wy' and 
-                  word[-1] in 'bcdfghjklmnpqrstvxz' and 
-                  word[-2] in 'aeiou' and 
-                  word[-3] not in 'aeiou'):
-                more_words.append(word + word[-1] + "ed")  # stop -> stopped
-            else:
-                more_words.append(word + "ed")
+                # Handle -ing form (gerund/present participle)
+                if word.endswith('ie'):
+                    more_words.append(word[:-2] + "ying")
+                elif word.endswith('e') and not word.endswith(('ee', 'oe', 'ye')):
+                    more_words.append(word[:-1] + "ing")
+                # Double final consonant in certain cases
+                elif (len(word) > 2 and 
+                      word[-1] not in 'wy' and 
+                      word[-1] in 'bcdfghjklmnpqrstvxz' and 
+                      word[-2] in 'aeiou' and 
+                      word[-3] not in 'aeiou'):
+                    more_words.append(word + word[-1] + "ing")
+                else:
+                    more_words.append(word + "ing")
+                
+                # Handle -ed form (past tense/past participle)
+                if word.endswith('e'):
+                    more_words.append(word + "d")
+                elif word.endswith('y') and word[-2] not in 'aeiou':
+                    more_words.append(word[:-1] + "ied")
+                # Double final consonant in certain cases
+                elif (len(word) > 2 and 
+                      word[-1] not in 'wy' and 
+                      word[-1] in 'bcdfghjklmnpqrstvxz' and 
+                      word[-2] in 'aeiou' and 
+                      word[-3] not in 'aeiou'):
+                    more_words.append(word + word[-1] + "ed")
+                else:
+                    more_words.append(word + "ed")
     
+    # Add all words to the vocabulary and ensure uniqueness
     words.extend(more_words)
-    return list(set(words))  
+    unique_words = list(set(words))
+    
+    # Remove incorrect word forms for words we explicitly know about
+    words_to_remove = []
+    for word in unique_words:
+        # Remove incorrect forms like "physicss", "physicsed", "physicsing"
+        for non_plural in non_plurals:
+            if word.startswith(non_plural + "s") or word.startswith(non_plural + "ed") or word.startswith(non_plural + "ing"):
+                words_to_remove.append(word)
+    
+    return [w for w in unique_words if w not in words_to_remove]
 
 def find_matching_words(partial_word, word_list, max_suggestions=5):
     """Find words that start with the given partial word"""

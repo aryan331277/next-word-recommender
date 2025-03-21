@@ -1,126 +1,144 @@
 import streamlit as st
-import numpy as np
 import re
 from collections import defaultdict, Counter
-import nltk
-from nltk.tokenize import word_tokenize
-from nltk.util import ngrams
+import pandas as pd
 
 # Setup
-st.set_page_config(page_title="Next Word Recommender", page_icon="📝")
-st.title("Next Word Recommender")
+st.set_page_config(page_title="Real-Time Word Suggester", page_icon="⌨️")
+st.title("Real-Time Word Suggester")
 
-# Download required NLTK data
+# Dictionary-based approach
 @st.cache_resource
-def download_nltk_data():
-    nltk.download('punkt')
-    nltk.download('brown')
-    nltk.download('gutenberg')
-    from nltk.corpus import brown, gutenberg
-    # Combine texts from Brown and Gutenberg corpus
-    all_texts = []
-    for file_id in brown.fileids():
-        all_texts.extend(brown.words(file_id))
-    for file_id in gutenberg.fileids():
-        all_texts.extend(gutenberg.words(file_id))
-    return ' '.join(all_texts).lower()
+def load_english_words():
+    # Common English words with their frequency
+    words = {
+        "the": 1, "be": 2, "to": 3, "of": 4, "and": 5, "a": 6, "in": 7, "that": 8, "have": 9, "I": 10,
+        "it": 11, "for": 12, "not": 13, "on": 14, "with": 15, "as": 16, "you": 17, "do": 18, "at": 19, "this": 20,
+        "but": 21, "his": 22, "by": 23, "from": 24, "they": 25, "we": 26, "say": 27, "her": 28, "she": 29, "or": 30,
+        "create": 50, "creative": 51, "creation": 52, "creativity": 53, "creator": 54, "creating": 55,
+        "created": 56, "creatively": 57, "python": 100, "program": 101, "programming": 102,
+        "programmer": 103, "code": 104, "coding": 105, "algorithm": 106, "data": 107, "science": 108,
+        "develop": 120, "developer": 121, "development": 122, "software": 123, "hardware": 124,
+        "computer": 125, "machine": 126, "learning": 127, "artificial": 128, "intelligence": 129,
+        "streamlit": 130, "web": 131, "app": 132, "application": 133, "interface": 134,
+        "user": 135, "experience": 136, "design": 137, "frontend": 138, "backend": 139
+    }
+    # Add more tech and programming related words
+    return words
 
-# Build n-gram model
-@st.cache_resource
-def build_ngram_model(text):
-    # Tokenize text
-    tokens = word_tokenize(text)
-    
-    # Build n-gram models (bigram and trigram)
-    bigrams = list(ngrams(tokens, 2))
-    trigrams = list(ngrams(tokens, 3))
-    
-    # Create frequency dictionaries
-    bigram_freq = defaultdict(Counter)
-    trigram_freq = defaultdict(Counter)
-    
-    for w1, w2 in bigrams:
-        bigram_freq[w1][w2] += 1
-    
-    for w1, w2, w3 in trigrams:
-        trigram_freq[(w1, w2)][w3] += 1
-    
-    return bigram_freq, trigram_freq
+# User dictionary management
+if 'user_dictionary' not in st.session_state:
+    st.session_state.user_dictionary = {}
 
-# Get recommendations based on input text
-def get_recommendations(input_text, bigram_freq, trigram_freq, top_n=5):
-    input_text = input_text.lower().strip()
-    
-    if not input_text:
-        return ["Start typing to get recommendations..."]
-    
-    words = word_tokenize(input_text)
-    
-    # Use trigram model if we have at least 2 words
-    if len(words) >= 2:
-        last_two = (words[-2], words[-1])
-        if last_two in trigram_freq:
-            return [word for word, _ in trigram_freq[last_two].most_common(top_n)]
-    
-    # Fall back to bigram model
-    if words[-1] in bigram_freq:
-        return [word for word, _ in bigram_freq[words[-1]].most_common(top_n)]
-    
-    # If no match found
-    return ["No recommendations found"]
+# Load dictionaries
+english_words = load_english_words()
+user_words = st.session_state.user_dictionary
 
-# Main app logic
-corpus_text = download_nltk_data()
-bigram_freq, trigram_freq = build_ngram_model(corpus_text)
+# Combine dictionaries
+def get_combined_dictionary():
+    combined = english_words.copy()
+    combined.update(user_words)
+    return combined
 
-# User input
-user_input = st.text_area("Type your text here:", height=150)
-
-# Button for recommendations
-if st.button("Get Recommendations") or user_input:
-    recommendations = get_recommendations(user_input, bigram_freq, trigram_freq)
+# Find matching words for partial input
+def find_matching_words(partial_word, dictionary, max_suggestions=5):
+    if not partial_word:
+        return []
     
-    st.subheader("Recommended next words:")
+    partial_word = partial_word.lower()
     
-    # Create buttons for each recommendation
-    cols = st.columns(len(recommendations))
-    for i, rec in enumerate(recommendations):
-        if cols[i].button(rec, key=f"rec_{i}"):
-            user_input = user_input + " " + rec
-            st.experimental_rerun()
-
-# Advanced settings expander
-with st.expander("Advanced Settings"):
-    st.subheader("Model Settings")
-    n_recommendations = st.slider("Number of recommendations", 1, 10, 5)
+    # Find all words that start with the partial word
+    matching = [(word, freq) for word, freq in dictionary.items() 
+                if word.lower().startswith(partial_word)]
     
-    if st.button("Upload Custom Training Text"):
-        st.warning("This feature would allow users to upload their own text corpus to train the model with domain-specific vocabulary.")
-
-# Real-time recommendations
-st.subheader("Real-time suggestions")
-rt_input = st.text_input("Try real-time suggestions (type and wait):")
-if rt_input:
-    rt_recommendations = get_recommendations(rt_input, bigram_freq, trigram_freq)
-    rt_cols = st.columns(len(rt_recommendations))
-    for i, rec in enumerate(rt_recommendations):
-        rt_cols[i].markdown(f"**{rec}**")
-
-# About section
-st.sidebar.title("About")
-st.sidebar.info(
-    """
-    This app recommends the next word based on what you've typed, using n-gram language models 
-    trained on a corpus of English text. The model learns patterns from existing text to predict 
-    likely continuations of your writing.
+    # Sort by frequency (higher frequency first)
+    matching.sort(key=lambda x: x[1], reverse=True)
     
-    The app uses:
-    - NLTK for language processing
-    - N-gram model for predictions
-    - Streamlit for the web interface
-    """
+    # Return just the words, limited to max_suggestions
+    return [word for word, _ in matching[:max_suggestions]]
+
+# Real-time word prediction
+def update_suggestions():
+    text = st.session_state.input_text
+    
+    # If empty, clear suggestions
+    if not text:
+        st.session_state.suggestions = []
+        return
+    
+    # Split the text to get the last word being typed
+    words = re.findall(r'\b\w+\b|\S', text)
+    
+    if not words:
+        st.session_state.suggestions = []
+        return
+    
+    last_word = words[-1]
+    
+    # Get suggestions for the last word
+    combined_dict = get_combined_dictionary()
+    suggestions = find_matching_words(last_word, combined_dict)
+    
+    st.session_state.suggestions = suggestions
+    st.session_state.current_word = last_word
+
+# Initialize session state
+if 'suggestions' not in st.session_state:
+    st.session_state.suggestions = []
+if 'current_word' not in st.session_state:
+    st.session_state.current_word = ""
+if 'input_text' not in st.session_state:
+    st.session_state.input_text = ""
+
+# Add to user dictionary
+st.sidebar.title("Add Words to Dictionary")
+new_word = st.sidebar.text_input("New Word:")
+if st.sidebar.button("Add to Dictionary") and new_word:
+    st.session_state.user_dictionary[new_word] = 1000  # High frequency for user-added words
+    st.sidebar.success(f"Added '{new_word}' to dictionary!")
+
+# Show user dictionary
+if st.session_state.user_dictionary:
+    st.sidebar.subheader("Your Custom Words")
+    user_words_df = pd.DataFrame(
+        {"Word": list(st.session_state.user_dictionary.keys())}
+    )
+    st.sidebar.dataframe(user_words_df)
+
+# Main text input with live update
+st.text_area(
+    "Type here:", 
+    key="input_text",
+    height=150,
+    on_change=update_suggestions
 )
+
+# Display suggestions in real-time
+if st.session_state.suggestions:
+    st.subheader("Suggestions:")
+    cols = st.columns(min(len(st.session_state.suggestions), 5))
+    
+    for i, suggestion in enumerate(st.session_state.suggestions):
+        if i < len(cols):
+            if cols[i].button(suggestion, key=f"sugg_{i}"):
+                # Replace the last partial word with the selected suggestion
+                words = re.findall(r'\b\w+\b|\S', st.session_state.input_text)
+                if words:
+                    words[-1] = suggestion
+                    st.session_state.input_text = ' '.join(words)
+                    # Add a space after the selected suggestion
+                    st.session_state.input_text += ' '
+                    st.experimental_rerun()
+
+# Explanation
+st.markdown("---")
+st.markdown("""
+### How it works:
+- As you type, the app suggests completions for the current word
+- Click on a suggestion to complete the current word
+- Add custom words to your dictionary using the sidebar
+""")
 
 # Footer
 st.markdown("---")
-st.markdown("Next Word Recommender - Built with Streamlit and NLTK")
+st.markdown("Real-Time Word Suggester - Built with Streamlit")
